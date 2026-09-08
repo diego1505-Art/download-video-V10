@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DowFlow - Multi-Site Downloader</title>
+    <style>
+        :root {
+            --bg: #f6efe5;
+            --surface: rgba(255, 250, 243, 0.82);
+            --surface-strong: #fff8ef;
+            --ink: #1b160f;
+            --muted: #6f665b;
+            --accent: #c96034;
+            --accent-dark: #8f3f1d;
+            --line: rgba(27, 22, 15, 0.12);
+            --success: #1f7a50;
+            --warning: #b06a11;
+            --shadow: 0 28px 70px rgba(64, 35, 18, 0.12);
+            --radius-xl: 32px;
+            --radius-lg: 22px;
+            --radius-md: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+            color: var(--ink);
+            background: #000;
+            overflow-x: hidden;
+        }
+
+        .bg-video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.4) saturate(1.2);
+            opacity: 0.8;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            width: min(1200px, calc(100% - 32px));
+            margin: 40px auto;
+        }
+
+        .shell {
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 24px 34px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-mark {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .brand-copy h1 {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .brand-copy p,
+        .topbar-right p,
+        .hero-copy p,
+        .field-label,
+        .status,
+        .chip,
+        .feature p,
+        .footer-note {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ffmpeg-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .ffmpeg-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d96a63;
+        }
+
+        .ffmpeg-status .dot.online {
+            background: #2f9a63;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.75fr);
+            gap: 28px;
+            align-items: start;
+            padding: 46px 34px 34px;
+        }
+
+        .hero-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 10px 8px 10px 0;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff6b6b;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .hero-copy h2 {
+            color: #fff;
+            max-width: 14ch;
+            font-size: clamp(2.7rem, 5vw, 4.5rem);
+            line-height: 0.96;
+            letter-spacing: -0.04em;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .hero-copy > p {
+            max-width: 56ch;
+            font-size: 1.06rem;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .media-stage {
+            min-height: 400px;
+            margin-top: 8px;
+            padding: 18px;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 28px;
+            background: rgba(0, 0, 0, 0.2);
+            width: 100%;
+        }
+
+        .media-stage.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .media-stage-note {
+            max-width: 32ch;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            border-radius: 999px;
+            padding: 14px 22px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            box-shadow: 0 16px 28px rgba(255, 0, 0, 0.25);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-secondary.active {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .hero-panel {
+            position: relative;
+            align-self: start;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-xl);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 18px 38px rgba(0,0,0,0.2);
+            color: #fff;
+        }
+
+        .hero-panel h3 { color: #fff; }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-header h3 {
+            font-size: 1.18rem;
+        }
+
+        .chip {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 0, 0, 0.2);
+            font-size: 0.86rem;
+            color: #ff6b6b;
+        }
+
+        .downloader-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .field-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .field-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .field-group input {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            padding: 18px 18px;
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 1rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .field-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .field-group input:focus {
+            border-color: rgba(255, 0, 0, 0.56);
+            box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.12);
+        }
+
+        .download-type-selector {
+            display: flex;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .format-selector {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            margin: 10px 0;
+        }
+
+        .format-selector.visible {
+            display: flex;
+        }
+
+        .format-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 0.92rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .format-select option {
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .language-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 10px 0;
+        }
+
+        .language-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 0.92rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .language-select option {
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .subtitles-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0 12px;
+        }
+
+        .subtitles-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #ff0000;
+            cursor: pointer;
+        }
+
+        .subtitles-toggle label {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .quality-selector {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .quality-selector.visible {
+            display: flex;
+        }
+
+        .quality-btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 160ms ease;
+        }
+
+        .quality-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .quality-btn.active {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            border-color: transparent;
+        }
+
+        .input-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status {
+            min-height: 26px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            padding: 6px 2px 0;
+        }
+
+        .status.error {
+            color: #ff6b6b;
+        }
+
+        .status.success {
+            color: #2f9a63;
+        }
+
+        .status.loading {
+            color: #ffaa00;
+        }
+
+        .progress-bar {
+            display: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-bar.visible {
+            display: block;
+        }
+
+        .batch-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(4, 6, 10, 0.72);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .batch-modal.visible {
+            display: flex;
+        }
+
+        .batch-dialog {
+            width: min(820px, 100%);
+            max-height: min(860px, calc(100vh - 40px));
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 22px 22px 18px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(38, 42, 50, 0.98) 0%, rgba(18, 20, 24, 0.98) 100%);
+            box-shadow: 0 40px 110px rgba(0, 0, 0, 0.55);
+            transition: width 220ms ease;
+        }
+
+        .batch-dialog.with-options {
+            width: min(1100px, 100%);
+        }
+
+        .batch-body {
+            display: flex;
+            align-items: stretch;
+            gap: 14px;
+            min-height: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .batch-main {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 0;
+            flex: 1;
+            overflow: auto;
+        }
+
+        .batch-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex: 0 0 auto;
+        }
+
+        .batch-header h3 {
+            color: #fff;
+            font-size: 1.28rem;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .batch-header p {
+            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            max-width: 52ch;
+        }
+
+        .batch-close {
+            flex: 0 0 auto;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 160ms ease, border-color 160ms ease;
+        }
+
+        .batch-close:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        .batch-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+            flex: 1;
+        }
+
+        .batch-section-label {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .batch-input {
+            width: 100%;
+            min-height: 220px;
+            flex: 1;
+            resize: vertical;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.38);
+            color: #fff;
+            font: 0.92rem/1.55 ui-monospace, "Cascadia Code", "Consolas", monospace;
+            outline: none;
+        }
+
+        .batch-input:focus {
+            border-color: rgba(255, 70, 70, 0.55);
+            box-shadow: 0 0 0 3px rgba(255, 40, 40, 0.12);
+        }
+
+        .batch-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .batch-toolbar-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .batch-toolbar .btn {
+            min-height: 40px;
+            padding: 0 14px;
+            font-size: 0.9rem;
+        }
+
+        .batch-toolbar .btn-find {
+            background: rgba(201, 96, 52, 0.18);
+            border-color: rgba(201, 96, 52, 0.55);
+            color: #ffd7c2;
+        }
+
+        .batch-toolbar .btn-find:hover {
+            background: rgba(201, 96, 52, 0.28);
+        }
+
+        .batch-options-panel {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            width: min(320px, 100%);
+            flex: 0 0 min(320px, 38%);
+            max-height: 100%;
+            overflow: auto;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.22) 100%);
+        }
+
+        .batch-options-panel.visible {
+            display: flex;
+        }
+
+        .batch-options-head {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+
+        .batch-options-identity {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .batch-options-site {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        .batch-options-site::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff3b3b;
+            box-shadow: 0 0 10px rgba(255, 59, 59, 0.7);
+        }
+
+        .batch-options-help {
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 0.86rem;
+            line-height: 1.4;
+        }
+
+        .batch-options-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .batch-options-actions .btn {
+            width: 100%;
+            min-height: 40px;
+        }
+
+        .batch-options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 860px) {
+            .batch-dialog.with-options {
+                width: min(820px, 100%);
+            }
+
+            .batch-body {
+                flex-direction: column;
+                overflow: auto;
+            }
+
+            .batch-options-panel {
+                width: 100%;
+                flex: 0 0 auto;
+                max-height: none;
+            }
+        }
+
+        .batch-option {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 100%;
+            padding: 12px 13px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.28);
+        }
+
+        .batch-option.disabled {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+
+        .batch-option-label {
+            color: rgba(255, 255, 255, 0.92);
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .batch-option-help {
+            color: rgba(255, 255, 255, 0.48);
+            font-size: 0.76rem;
+            line-height: 1.35;
+            margin-top: auto;
+        }
+
+        .batch-option-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .batch-option select,
+        .batch-option input[type="number"],
+        .batch-option input[type="text"] {
+            width: 100%;
+            min-height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            padding: 0 11px;
+            background: rgba(0, 0, 0, 0.42);
+            color: #fff;
+            outline: none;
+        }
+
+        .batch-option select:focus,
+        .batch-option input[type="number"]:focus,
+        .batch-option input[type="text"]:focus {
+            border-color: rgba(255, 70, 70, 0.5);
+        }
+
+        .batch-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #ff2b2b;
+        }
+
+        .batch-results {
+            display: none;
+            max-height: 150px;
+            overflow: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 14px;
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .batch-results.visible {
+            display: block;
+        }
+
+        .batch-results div + div {
+            margin-top: 7px;
+        }
+
+        .batch-results .ok {
+            color: #75d89e;
+        }
+
+        .batch-results .fail {
+            color: #ff8a8a;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #ff0000 0%, #ff6b6b 100%);
+            border-radius: 999px;
+            transition: width 300ms ease;
+            width: 0%;
+        }
+
+        .player-shell {
+            display: none;
+            margin-top: 0;
+            padding: 8px;
+            border: none;
+            border-radius: 24px;
+            background: transparent;
+            animation: rise 320ms ease;
+            width: 100%;
+        }
+
+        .player-shell.visible {
+            display: block;
+        }
+
+        .video-board {
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #120e0a;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+
+        .video-board video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-height: 720px;
+            background: #000;
+            object-fit: contain;
+        }
+
+        .subtitle-overlay {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            bottom: 7%;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .subtitle-text {
+            max-width: 100%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.34);
+            color: #fff;
+            font-size: clamp(18px, 2vw, 30px);
+            font-weight: 700;
+            line-height: 1.35;
+            white-space: pre-line;
+            text-shadow:
+                0 2px 0 rgba(0, 0, 0, 0.95),
+                0 0 10px rgba(0, 0, 0, 0.75),
+                0 0 24px rgba(0, 0, 0, 0.55);
+        }
+
+        .control-cluster {
+            display: grid;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-row strong {
+            min-width: 100px;
+            font-size: 0.92rem;
+            color: #fff;
+        }
+
+        .speed-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .speed-grid button,
+        .pill-toggle {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+        }
+
+        .speed-grid button:hover,
+        .pill-toggle:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .speed-grid button.active,
+        .pill-toggle.active {
+            color: #fff;
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            border-color: transparent;
+        }
+
+        .player-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .player-meta span {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .player-meta span.warning-chip {
+            background: rgba(255, 170, 0, 0.16);
+            color: #ffd27a;
+            border: 1px solid rgba(255, 170, 0, 0.22);
+        }
+
+        .source-card {
+            display: none;
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+        }
+
+        .source-card.visible {
+            display: block;
+        }
+
+        .source-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .source-value {
+            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            word-break: break-word;
+        }
+
+        .local-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .local-file-name {
+            min-height: 20px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.84rem;
+        }
+
+        .subtitle-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .subtitle-file-name {
+            min-height: 20px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.84rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            padding: 0 34px 34px;
+        }
+
+        .feature {
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            color: #fff;
+        }
+
+        .feature strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .feature p {
+            line-height: 1.6;
+        }
+
+        .footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 34px 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-note {
+            font-size: 0.92rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @media (max-width: 960px) {
+            .hero,
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-copy h2 {
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page {
+                width: min(100% - 16px, 1160px);
+                margin: 8px auto;
+            }
+
+            .shell {
+                border-radius: 28px;
+            }
+
+            .topbar,
+            .hero,
+            .features,
+            .footer {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-video-container">
+        <video autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop">
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-background-9937-large.mp4" type="video/mp4">
+        </video>
+        <div class="bg-overlay"></div>
+    </div>
+
+    <main class="page">
+        <section class="shell">
+            <header class="topbar">
+                <div class="brand">
+                    <div class="brand-mark">▼</div>
+                    <div class="brand-copy">
+                        <h1>DowFlow</h1>
+                        <p>Multi-Site Downloader + Lecteur local</p>
+                    </div>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="ffmpeg-status">
+                        <span class="dot" id="ffmpegDot"></span>
+                        <span id="ffmpegText">FFmpeg: verification...</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="hero">
+                <div class="hero-copy">
+                    <div class="eyebrow">YouTube · Twitch · Vimeo · TikTok · +1000 sites</div>
+                    <h2>Telecharge et regarde tes videos.</h2>
+                    <p>
+                        Colle n'importe quelle URL (YouTube, Twitch, Vimeo, TikTok, Twitter/X,
+                        Dailymotion, Instagram, SoundCloud…) pour telecharger la video ou l'audio,
+                        puis regarde-la directement avec les controles de vitesse, boucle et acceleration.
+                    </p>
+
+                    <div class="media-stage empty" id="mediaStage">
+                        <div class="source-card" id="sourceCard">
+                            <span class="source-chip" id="sourceChip">Aucune source</span>
+                            <div class="source-value" id="sourceValue">L'URL ou le fichier local charge apparaitra ici.</div>
+                        </div>
+                        <p class="media-stage-note" id="mediaStageNote">
+                            La video telechargee s'affichera ici avec tous les controles.
+                        </p>
+                    </div>
+                </div>
+
+                <aside class="hero-panel" id="download-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Telecharger une video</h3>
+                            <p class="field-label">YouTube, Twitch, Vimeo, TikTok, ou fichier local</p>
+                        </div>
+                        <span class="chip">yt-dlp</span>
+                    </div>
+
+                    <form class="downloader-form" id="downloaderForm">
+                        <label class="field-label">URL de la video ou chemin local</label>
+                        <div class="field-group">
+                            <input
+                                id="videoUrl"
+                                name="videoUrl"
+                                type="text"
+                                placeholder="https://www.youtube.com/watch?v=… ou https://www.twitch.tv/…"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="local-picker">
+                            <button class="btn btn-secondary" type="button" id="pickLocalFile">Choisir une video locale</button>
+                            <input id="localVideoFile" type="file" accept="video/*,audio/*,.mkv,.m4v,.avi,.mov,.webm" hidden>
+                        </div>
+                        <div class="local-file-name" id="localFileName">Aucun fichier local selectionne.</div>
+
+                        <label class="field-label">Sous-titres ASS locaux</label>
+                        <div class="subtitle-tools">
+                            <button class="btn btn-secondary" type="button" id="pickSubtitleFile">Choisir un .ass ou .srt</button>
+                            <input id="subtitleFile" type="file" accept=".ass,.srt" hidden>
+                        </div>
+                        <div class="subtitle-file-name" id="subtitleFileName">Aucun fichier de sous-titres selectionne.</div>
+
+                        <label class="field-label">Type de telechargement</label>
+                        <div class="download-type-selector">
+                            <button class="btn btn-secondary" type="button" data-type="audio">Audio</button>
+                            <button class="btn btn-secondary active" type="button" data-type="video">Video</button>
+                        </div>
+
+                        <div class="format-selector" id="videoFormatSelector">
+                            <label class="field-label" style="font-size:0.82rem;margin-bottom:2px">Format video</label>
+                            <select class="format-select" id="videoFormatSelect">
+                                <option value="mp4" selected>MP4 (universel)</option>
+                                <option value="best">Auto (meilleur possible)</option>
+                                <option value="mkv">MKV (matroska)</option>
+                                <option value="webm">WebM (libre)</option>
+                                <option value="mov">MOV (QuickTime)</option>
+                                <option value="avi">AVI (legacy)</option>
+                            </select>
+                        </div>
+
+                        <div class="format-selector visible" id="audioFormatSelector" style="display:none">
+                            <label class="field-label" style="font-size:0.82rem;margin-bottom:2px">Format audio</label>
+                            <select class="format-select" id="audioFormatSelect">
+                                <option value="mp3" selected>MP3 (192 kbps)</option>
+                                <option value="best">Auto (meilleur possible)</option>
+                                <option value="mp3_320">MP3 (320 kbps HQ)</option>
+                                <option value="flac">FLAC (lossless)</option>
+                                <option value="wav">WAV (non compressé)</option>
+                                <option value="aac">AAC (256 kbps)</option>
+                                <option value="m4a">M4A (iTunes)</option>
+                                <option value="opus">Opus (160 kbps)</option>
+                                <option value="ogg">OGG Vorbis (192 kbps)</option>
+                                <option value="alac">ALAC (lossless Apple)</option>
+                            </select>
+                        </div>
+
+                        <div class="quality-selector visible" id="qualitySelector">
+                            <button class="quality-btn active" type="button" data-quality="best">Auto max</button>
+                            <button class="quality-btn" type="button" data-quality="4320p">8K</button>
+                            <button class="quality-btn" type="button" data-quality="2160p">4K</button>
+                            <button class="quality-btn" type="button" data-quality="1440p">1440p</button>
+                            <button class="quality-btn" type="button" data-quality="1080p">1080p</button>
+                            <button class="quality-btn" type="button" data-quality="720p">720p</button>
+                            <button class="quality-btn" type="button" data-quality="480p">480p</button>
+                            <button class="quality-btn" type="button" data-quality="360p">360p</button>
+                            <button class="quality-btn" type="button" data-quality="240p">240p</button>
+                        </div>
+
+                        <div class="language-selector">
+                            <label class="field-label" style="font-size:0.82rem;margin-bottom:2px">Langue (audio / sous-titres)</label>
+                            <select class="language-select" id="languageSelect">
+                                <option value="" selected>Auto (détection URL)</option>
+                                <optgroup label="── Français / Francophone ──">
+                                    <option value="vf">VF (Français doublé)</option>
+                                    <option value="vo">VOSTFR (VO sous-titrée FR)</option>
+                                    <option value="fr">Français</option>
+                                </optgroup>
+                                <optgroup label="── Internationales principales ──">
+                                    <option value="en">English</option>
+                                    <option value="es">Español / Spanish</option>
+                                    <option value="de">Deutsch</option>
+                                    <option value="it">Italiano</option>
+                                    <option value="pt">Português</option>
+                                    <option value="pt-br">Português (BR)</option>
+                                    <option value="ru">Русский / Russian</option>
+                                    <option value="ja">日本語 / Japanese</option>
+                                    <option value="ko">한국어 / Korean</option>
+                                    <option value="zh">中文 / Chinese</option>
+                                </optgroup>
+                                <optgroup label="── Autres langues ──">
+                                    <option value="ar">العربية / Arabic</option>
+                                    <option value="hi">हिन्दी / Hindi</option>
+                                    <option value="tr">Türkçe / Turkish</option>
+                                    <option value="pl">Polski / Polish</option>
+                                    <option value="nl">Nederlands / Dutch</option>
+                                    <option value="sv">Svenska / Swedish</option>
+                                    <option value="no">Norsk / Norwegian</option>
+                                    <option value="da">Dansk / Danish</option>
+                                    <option value="fi">Suomi / Finnish</option>
+                                    <option value="cs">Čeština / Czech</option>
+                                    <option value="hu">Magyar / Hungarian</option>
+                                    <option value="ro">Română / Romanian</option>
+                                    <option value="bg">Български / Bulgarian</option>
+                                    <option value="el">Ελληνικά / Greek</option>
+                                    <option value="he">עברית / Hebrew</option>
+                                    <option value="th">ไทย / Thai</option>
+                                    <option value="vi">Tiếng Việt / Vietnamese</option>
+                                    <option value="id">Indonesia / Indonesian</option>
+                                    <option value="ms">Melayu / Malay</option>
+                                    <option value="uk">Українська / Ukrainian</option>
+                                    <option value="ca">Català / Catalan</option>
+                                    <option value="eu">Euskara / Basque</option>
+                                    <option value="fa">فارسی / Persian</option>
+                                    <option value="ta">தமிழ் / Tamil</option>
+                                    <option value="te">తెలుగు / Telugu</option>
+                                    <option value="bn">বাংলা / Bengali</option>
+                                    <option value="ur">اردو / Urdu</option>
+                                    <option value="multi">Multi-langues / toutes</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="subtitles-toggle">
+                            <input type="checkbox" id="writeSubtitlesToggle" checked>
+                            <label for="writeSubtitlesToggle">Télécharger les sous-titres si disponibles</label>
+                        </div>
+
+                        <div class="input-actions">
+                            <button class="btn btn-primary" type="submit" id="downloadBtn">Telecharger</button>
+                            <button class="btn btn-secondary" type="button" id="openBatchBtn">URLs multiples</button>
+                        </div>
+
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress-bar-fill" id="progressFill"></div>
+                        </div>
+
+                        <div class="status" id="statusMessage">Pret a telecharger</div>
+                    </form>
+
+                    <section class="player-shell" id="playerShell">
+                        <div class="video-board">
+                            <video id="videoPlayer" controls playsinline preload="metadata"></video>
+                            <div class="subtitle-overlay" id="subtitleOverlay">
+                                <div class="subtitle-text hidden" id="subtitleText"></div>
+                            </div>
+                        </div>
+
+                        <div class="control-cluster">
+                            <div class="control-row">
+                                <strong>Vitesse</strong>
+                                <div class="speed-grid" id="speedBoard"></div>
+                            </div>
+
+                            <div class="control-row">
+                                <strong>Actions</strong>
+                                <button class="pill-toggle" type="button" id="loopToggle">Loop off</button>
+                                <button class="pill-toggle" type="button" id="playPauseToggle">Lire</button>
+                                <button class="pill-toggle" type="button" id="resetSpeed">x1</button>
+                            </div>
+                        </div>
+
+                        <div class="player-meta" id="playerMeta"></div>
+                    </section>
+                </aside>
+            </section>
+
+            <section class="features">
+                <article class="feature">
+                    <strong>+1000 sites supportes</strong>
+                    <p>YouTube, Twitch, Vimeo, TikTok, Twitter/X, Instagram, Dailymotion, SoundCloud… grace a yt-dlp.</p>
+                </article>
+                <article class="feature">
+                    <strong>Controles avances</strong>
+                    <p>Vitesse de lecture de 0.25x a 16x, boucle automatique, et lecture/pause rapide.</p>
+                </article>
+                <article class="feature">
+                    <strong>Audio ou Video</strong>
+                    <p>Choisis entre telecharger l'audio seul (MP3) ou la video complete (MP4) en plusieurs qualites.</p>
+                </article>
+            </section>
+
+            <footer class="footer">
+                <p class="footer-note">DowFlow - Multi-Site Media Downloader</p>
+                <p class="footer-note">Propulse par yt-dlp · <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank" style="color:inherit;opacity:0.7">Sites supportes</a></p>
+            </footer>
+        </section>
+    </main>
+
+    <div class="batch-modal" id="batchModal" aria-hidden="true">
+        <div class="batch-dialog" id="batchDialog" role="dialog" aria-modal="true" aria-labelledby="batchTitle">
+            <div class="batch-header">
+                <div>
+                    <h3 id="batchTitle">Telecharger plusieurs URLs</h3>
+                    <p>Colle une URL par ligne. Les options audio/video et qualite actuelles seront utilisees.</p>
+                </div>
+                <button class="batch-close" type="button" id="closeBatchBtn" aria-label="Fermer">×</button>
+            </div>
+
+            <div class="batch-body">
+                <div class="batch-main">
+                    <section class="batch-section" aria-label="Liste d'URLs">
+                        <div class="batch-section-label">Liste</div>
+                        <textarea
+                            class="batch-input"
+                            id="batchUrls"
+                            placeholder="https://www.youtube.com/watch?v=...
+https://franime.fr/anime/...
+https://example.com/video..."
+                        ></textarea>
+                    </section>
+
+                    <div class="batch-toolbar">
+                        <div class="batch-toolbar-group">
+                            <button class="btn btn-secondary" type="button" id="importBatchFileBtn">Importer un .txt</button>
+                            <input id="batchFileInput" type="file" accept=".txt,.list,.csv" hidden>
+                            <button class="btn btn-secondary" type="button" id="urlOptionsBtn" title="Options selon le site de la premiere URL">Options site</button>
+                            <button class="btn btn-secondary btn-find" type="button" id="fetchEpisodesBtn">Trouver</button>
+                            <button class="btn btn-secondary" type="button" id="clearBatchBtn">Vider</button>
+                        </div>
+                        <div class="batch-toolbar-group">
+                            <button class="btn btn-primary" type="button" id="startBatchBtn">Telecharger la liste</button>
+                        </div>
+                    </div>
+
+                    <div class="batch-results" id="batchResults" aria-live="polite"></div>
+                </div>
+
+                <aside class="batch-options-panel" id="urlOptionsPanel" aria-hidden="true">
+                    <div class="batch-options-head">
+                        <div class="batch-options-identity">
+                            <span class="batch-options-site" id="urlOptionsSite">Site</span>
+                            <p class="batch-options-help" id="urlOptionsHelp">Colle une URL puis ouvre les options.</p>
+                        </div>
+                        <div class="batch-options-actions">
+                            <button class="btn btn-secondary btn-find" type="button" id="applyUrlOptionsBtn">Rechercher</button>
+                        </div>
+                    </div>
+                    <div class="batch-options-grid" id="urlOptionsGrid"></div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const form = document.getElementById("downloaderForm");
+        const input = document.getElementById("videoUrl");
+        const statusMessage = document.getElementById("statusMessage");
+        const progressBar = document.getElementById("progressBar");
+        const progressFill = document.getElementById("progressFill");
+        const downloadBtn = document.getElementById("downloadBtn");
+        const qualitySelector = document.getElementById("qualitySelector");
+        const mediaStage = document.getElementById("mediaStage");
+        const mediaStageNote = document.getElementById("mediaStageNote");
+        const sourceCard = document.getElementById("sourceCard");
+        const sourceChip = document.getElementById("sourceChip");
+        const sourceValue = document.getElementById("sourceValue");
+        const playerShell = document.getElementById("playerShell");
+        const videoPlayer = document.getElementById("videoPlayer");
+        const speedBoard = document.getElementById("speedBoard");
+        const loopToggle = document.getElementById("loopToggle");
+        const playPauseToggle = document.getElementById("playPauseToggle");
+        const resetSpeed = document.getElementById("resetSpeed");
+        const playerMeta = document.getElementById("playerMeta");
+        const ffmpegDot = document.getElementById("ffmpegDot");
+        const ffmpegText = document.getElementById("ffmpegText");
+        const pickLocalFile = document.getElementById("pickLocalFile");
+        const localVideoFile = document.getElementById("localVideoFile");
+        const localFileName = document.getElementById("localFileName");
+        const pickSubtitleFile = document.getElementById("pickSubtitleFile");
+        const subtitleFile = document.getElementById("subtitleFile");
+        const subtitleFileName = document.getElementById("subtitleFileName");
+        const subtitleText = document.getElementById("subtitleText");
+        const openBatchBtn = document.getElementById("openBatchBtn");
+        const batchModal = document.getElementById("batchModal");
+        const batchDialog = document.getElementById("batchDialog");
+        const closeBatchBtn = document.getElementById("closeBatchBtn");
+        const batchUrls = document.getElementById("batchUrls");
+        const importBatchFileBtn = document.getElementById("importBatchFileBtn");
+        const batchFileInput = document.getElementById("batchFileInput");
+        const startBatchBtn = document.getElementById("startBatchBtn");
+        const clearBatchBtn = document.getElementById("clearBatchBtn");
+        const urlOptionsBtn = document.getElementById("urlOptionsBtn");
+        const urlOptionsPanel = document.getElementById("urlOptionsPanel");
+        const urlOptionsSite = document.getElementById("urlOptionsSite");
+        const urlOptionsHelp = document.getElementById("urlOptionsHelp");
+        const urlOptionsGrid = document.getElementById("urlOptionsGrid");
+        const applyUrlOptionsBtn = document.getElementById("applyUrlOptionsBtn");
+        const fetchEpisodesBtn = document.getElementById("fetchEpisodesBtn");
+        const batchResults = document.getElementById("batchResults");
+        const typeButtons = document.querySelectorAll("[data-type]");
+        const qualityButtons = document.querySelectorAll("[data-quality]");
+        const videoFormatSelect = document.getElementById("videoFormatSelect");
+        const audioFormatSelect = document.getElementById("audioFormatSelect");
+        const videoFormatSelector = document.getElementById("videoFormatSelector");
+        const audioFormatSelector = document.getElementById("audioFormatSelector");
+        const languageSelect = document.getElementById("languageSelect");
+        const writeSubtitlesToggle = document.getElementById("writeSubtitlesToggle");
+
+        let currentType = "video";
+        let currentQuality = "best";
+        let currentVideoFormat = "mp4";
+        let currentAudioFormat = "mp3";
+        let currentLanguage = "";
+        let currentLocalObjectUrl = null;
+        let currentSubtitleEntries = [];
+        let currentUrlOptionsProfile = null;
+        let urlOptionsLoadedFor = "";
+        const speedValues = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 8, 16];
+
+        // FFmpeg status check
+        function checkFFmpeg() {
+            fetch("/check-ffmpeg")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.has_ffmpeg) {
+                        ffmpegDot.classList.add("online");
+                        ffmpegText.textContent = "FFmpeg: OK";
+                    } else {
+                        ffmpegDot.classList.remove("online");
+                        ffmpegText.textContent = "FFmpeg: non installe";
+                    }
+                })
+                .catch(() => {
+                    ffmpegDot.classList.remove("online");
+                    ffmpegText.textContent = "Serveur: hors ligne";
+                });
+        }
+
+        function resetProgressUI() {
+            statusMessage.classList.remove("loading-pulse");
+            downloadBtn.disabled = false;
+            setTimeout(hideProgress, 400);
+        }
+
+        // Status update
+        function updateStatus(message, state) {
+            statusMessage.textContent = message;
+            statusMessage.className = "status" + (state ? " " + state : "");
+        }
+
+        function setBatchModalVisible(visible) {
+            batchModal.classList.toggle("visible", visible);
+            batchModal.setAttribute("aria-hidden", visible ? "false" : "true");
+            if (visible) {
+                batchUrls.focus();
+            }
+        }
+
+        function normalizeBatchText(value) {
+            const normalizedLines = [];
+            const lines = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+
+            for (const line of lines) {
+                const isContinuation = !/^https?:\/\//i.test(line);
+                if (isContinuation && normalizedLines.length > 0) {
+                    normalizedLines[normalizedLines.length - 1] += line;
+                } else {
+                    normalizedLines.push(line);
+                }
+            }
+
+            return normalizedLines.join("\n");
+        }
+
+        function parseBatchUrls(value) {
+            const seen = new Set();
+            const normalizedValue = normalizeBatchText(value);
+            const matches = normalizedValue.match(/https?:\/\/[^\s"'<>]+/g) || [];
+            return matches
+                .map(url => url.trim().replace(/[),.;]+$/, ""))
+                .filter(url => {
+                    if (seen.has(url)) {
+                        return false;
+                    }
+                    seen.add(url);
+                    return true;
+                });
+        }
+
+        function addBatchResult(message, state) {
+            batchResults.classList.add("visible");
+            const row = document.createElement("div");
+            row.className = state || "";
+            row.textContent = message;
+            batchResults.appendChild(row);
+            batchResults.scrollTop = batchResults.scrollHeight;
+        }
+
+        function getFirstBatchUrl() {
+            const lines = normalizeBatchText(batchUrls.value).trim().split("\n");
+            const first = lines[0] ? lines[0].trim() : "";
+            if (!first) {
+                return "";
+            }
+            const matches = first.match(/https?:\/\/[^\s"'<>]+/i);
+            return matches ? matches[0].replace(/[),.;]+$/, "") : first;
+        }
+
+        function setUrlOptionsPanelVisible(visible) {
+            urlOptionsPanel.classList.toggle("visible", visible);
+            urlOptionsPanel.setAttribute("aria-hidden", visible ? "false" : "true");
+            urlOptionsBtn.classList.toggle("active", visible);
+            batchDialog.classList.toggle("with-options", visible);
+        }
+
+        function renderUrlOptionControl(option) {
+            const wrap = document.createElement("div");
+            wrap.className = "batch-option" + (option.enabled === false ? " disabled" : "");
+            wrap.dataset.optionKey = option.key;
+
+            const label = document.createElement("div");
+            label.className = "batch-option-label";
+            label.textContent = option.label;
+            wrap.appendChild(label);
+
+            const control = document.createElement("div");
+            control.className = "batch-option-control";
+
+            if (option.kind === "toggle") {
+                const input = document.createElement("input");
+                input.type = "checkbox";
+                input.dataset.optionInput = option.key;
+                input.checked = Boolean(option.default);
+                input.disabled = option.enabled === false;
+                control.appendChild(input);
+            } else if (option.kind === "select") {
+                const select = document.createElement("select");
+                select.dataset.optionInput = option.key;
+                select.disabled = option.enabled === false;
+                (option.choices || []).forEach((choice) => {
+                    const opt = document.createElement("option");
+                    opt.value = String(choice.value);
+                    opt.textContent = choice.label;
+                    if (String(choice.value) === String(option.default)) {
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                });
+                control.appendChild(select);
+            } else if (option.kind === "number") {
+                const input = document.createElement("input");
+                input.type = "number";
+                input.dataset.optionInput = option.key;
+                input.value = option.default ?? 0;
+                if (option.min != null) input.min = option.min;
+                if (option.max != null) input.max = option.max;
+                input.disabled = option.enabled === false;
+                control.appendChild(input);
+            } else if (option.kind === "text") {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.dataset.optionInput = option.key;
+                input.value = option.default == null ? "" : String(option.default);
+                input.placeholder = option.placeholder || "";
+                input.disabled = option.enabled === false;
+                control.appendChild(input);
+            }
+
+            wrap.appendChild(control);
+
+            if (option.help) {
+                const help = document.createElement("div");
+                help.className = "batch-option-help";
+                help.textContent = option.help;
+                wrap.appendChild(help);
+            }
+
+            return wrap;
+        }
+
+        function collectUrlOptions() {
+            const options = {};
+            if (!currentUrlOptionsProfile) {
+                return options;
+            }
+            (currentUrlOptionsProfile.options || []).forEach((option) => {
+                const input = urlOptionsGrid.querySelector(`[data-option-input="${option.key}"]`);
+                if (!input) {
+                    options[option.key] = option.default;
+                    return;
+                }
+                if (option.kind === "toggle") {
+                    options[option.key] = Boolean(input.checked);
+                } else if (option.kind === "number") {
+                    const value = Number(input.value);
+                    options[option.key] = Number.isFinite(value) ? value : option.default;
+                } else {
+                    options[option.key] = input.value;
+                }
+            });
+            return options;
+        }
+
+        async function loadUrlOptionsPanel(forceReload) {
+            const firstUrl = getFirstBatchUrl();
+            if (!firstUrl) {
+                addBatchResult("Colle au moins une URL en premiere ligne.", "fail");
+                return false;
+            }
+
+            if (!forceReload && urlOptionsLoadedFor === firstUrl && currentUrlOptionsProfile) {
+                setUrlOptionsPanelVisible(true);
+                return true;
+            }
+
+            urlOptionsBtn.disabled = true;
+            addBatchResult(`Chargement des options pour ${firstUrl}...`, "");
+
+            try {
+                const response = await fetch("/url-options", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: firstUrl })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Impossible de charger les options.");
+                }
+
+                currentUrlOptionsProfile = data;
+                urlOptionsLoadedFor = firstUrl;
+                urlOptionsSite.textContent = data.label || data.site_id || "Site";
+                urlOptionsHelp.textContent = data.help_text
+                    || (data.available
+                        ? "Ajuste les options puis clique Rechercher."
+                        : "Aucune expansion automatique pour ce domaine.");
+                urlOptionsGrid.innerHTML = "";
+                (data.options || []).forEach((option) => {
+                    urlOptionsGrid.appendChild(renderUrlOptionControl(option));
+                });
+
+                if (!(data.options || []).length) {
+                    const empty = document.createElement("div");
+                    empty.className = "batch-option-help";
+                    empty.textContent = "Pas d'options specifiques pour ce site.";
+                    urlOptionsGrid.appendChild(empty);
+                }
+
+                setUrlOptionsPanelVisible(true);
+                addBatchResult(
+                    `Options ${data.label || data.site_id}: ${(data.options || []).length} champ(s).`,
+                    "ok"
+                );
+                return true;
+            } catch (error) {
+                addBatchResult(`Erreur options: ${error.message}`, "fail");
+                return false;
+            } finally {
+                urlOptionsBtn.disabled = false;
+            }
+        }
+
+        async function expandFirstUrl() {
+            const firstUrl = getFirstBatchUrl();
+            if (!firstUrl) {
+                addBatchResult("Colle au moins une URL en premiere ligne.", "fail");
+                return;
+            }
+
+            if (!currentUrlOptionsProfile || urlOptionsLoadedFor !== firstUrl) {
+                const loaded = await loadUrlOptionsPanel(true);
+                if (!loaded) {
+                    return;
+                }
+            } else {
+                setUrlOptionsPanelVisible(true);
+            }
+
+            const options = collectUrlOptions();
+            fetchEpisodesBtn.disabled = true;
+            applyUrlOptionsBtn.disabled = true;
+            urlOptionsBtn.disabled = true;
+            addBatchResult(`Recherche en cours (${currentUrlOptionsProfile.label || "site"})...`, "");
+
+            try {
+                const response = await fetch("/expand-url", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: firstUrl, options })
+                });
+                const data = await response.json();
+                if (data.success && Array.isArray(data.urls) && data.urls.length > 0) {
+                    batchUrls.value = data.urls.join("\n");
+                    const title = data.title || data.anime_title || firstUrl;
+                    addBatchResult(`✓ ${data.count || data.urls.length} URL(s) trouvees — ${title}`, "ok");
+                    updateStatus(`${data.count || data.urls.length} URL(s) trouvees.`, "success");
+                } else {
+                    addBatchResult(`Erreur: ${data.error || "Aucune URL trouvee."}`, "fail");
+                }
+            } catch (error) {
+                addBatchResult(`Erreur reseau: ${error.message}`, "fail");
+            } finally {
+                fetchEpisodesBtn.disabled = false;
+                applyUrlOptionsBtn.disabled = false;
+                urlOptionsBtn.disabled = false;
+            }
+        }
+
+        async function downloadOneUrl(url) {
+            const response = await fetch("/download", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    url: url,
+                    type: currentType,
+                    quality: currentQuality,
+                    video_format: currentVideoFormat,
+                    audio_format: currentAudioFormat,
+                    language: currentLanguage,
+                    write_subtitles: writeSubtitlesToggle.checked
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "Telechargement impossible");
+            }
+            return data;
+        }
+
+        async function runBatchDownload() {
+            const urls = parseBatchUrls(batchUrls.value);
+            if (urls.length === 0) {
+                addBatchResult("Aucune URL valide dans la liste.", "fail");
+                return;
+            }
+
+            startBatchBtn.disabled = true;
+            clearBatchBtn.disabled = true;
+            downloadBtn.disabled = true;
+            batchResults.innerHTML = "";
+            batchResults.classList.add("visible");
+            showProgress();
+            setProgress(0);
+
+            let successCount = 0;
+            let failCount = 0;
+            let skippedCount = 0;
+            updateStatus(`Telechargement en serie: 0/${urls.length}`, "loading");
+
+            for (let index = 0; index < urls.length; index += 1) {
+                const url = urls[index];
+                const position = index + 1;
+                setProgress(Math.round((index / urls.length) * 100));
+                updateStatus(`Telechargement en serie: ${position}/${urls.length}`, "loading");
+                addBatchResult(`[${position}/${urls.length}] En cours: ${url}`, "");
+
+                try {
+                    const data = await downloadOneUrl(url);
+                    
+                    if (data.skipped) {
+                        skippedCount += 1;
+                        const skipState = data.reason === "already_exists" ? "ok" : "fail";
+                        addBatchResult(`SAUTE: ${url} (${data.message || "Lecteur non capture ou indisponible"})`, skipState);
+                        continue;
+                    }
+
+                    successCount += 1;
+                    addBatchResult(`OK: ${data.filename || url}`, "ok");
+
+                    if (data.file_url && data.previewable !== false) {
+                        loadVideo(
+                            data.file_url,
+                            data.filename,
+                            data.source_type === "local" ? "LOCAL" : "URL",
+                            data.source_label
+                        );
+                    }
+                } catch (error) {
+                    failCount += 1;
+                    addBatchResult(`Erreur: ${url} - ${error.message}`, "fail");
+                }
+            }
+
+            setProgress(100);
+            startBatchBtn.disabled = false;
+            clearBatchBtn.disabled = false;
+            downloadBtn.disabled = false;
+            resetProgressUI();
+
+            const finalState = failCount ? "error" : "success";
+            updateStatus(`Serie terminee: ${successCount} reussi, ${skippedCount} saute, ${failCount} echoue`, finalState);
+        }
+
+        // Progress bar
+        function setProgress(percent) {
+            progressFill.style.width = percent + "%";
+        }
+
+        function showProgress() {
+            progressBar.classList.add("visible");
+            setProgress(0);
+        }
+
+        function hideProgress() {
+            progressBar.classList.remove("visible");
+        }
+
+        function updateSourceCard(type, value) {
+            sourceCard.classList.add("visible");
+            sourceChip.textContent = type;
+            sourceValue.textContent = value || "Source en attente";
+        }
+
+        function resetPlayerDisplay() {
+            videoPlayer.pause();
+            videoPlayer.removeAttribute("src");
+            videoPlayer.load();
+            playerMeta.innerHTML = "";
+            subtitleText.textContent = "";
+            subtitleText.classList.add("hidden");
+        }
+
+        function clearSubtitles() {
+            currentSubtitleEntries = [];
+            subtitleText.textContent = "";
+            subtitleText.classList.add("hidden");
+            subtitleFileName.textContent = "Aucun fichier de sous-titres selectionne.";
+        }
+
+        function getResolutionLabel(width, height) {
+            const longestSide = Math.max(width || 0, height || 0);
+            if (longestSide >= 3800) return "4K";
+            if (longestSide >= 2500) return "1440p";
+            if (longestSide >= 1800) return "1080p";
+            if (longestSide >= 1200) return "720p";
+            if (longestSide >= 900) return "480p";
+            return "basse resolution";
+        }
+
+        function renderPlayerMeta() {
+            const duration = Math.round(videoPlayer.duration || 0);
+            const mins = Math.floor(duration / 60);
+            const secs = duration % 60;
+            const width = videoPlayer.videoWidth || 0;
+            const height = videoPlayer.videoHeight || 0;
+
+            if (!width || !height) {
+                playerMeta.innerHTML = `
+                    <span>Duree: ${mins}:${secs.toString().padStart(2, "0")}</span>
+                    <span>Source: audio ou media sans resolution video</span>
+                `;
+                return;
+            }
+
+            const resolution = `${width}x${height}`;
+            const qualityLabel = getResolutionLabel(width, height);
+            const shouldWarn = Math.max(width, height) < 1920;
+
+            playerMeta.innerHTML = `
+                <span>Duree: ${mins}:${secs.toString().padStart(2, "0")}</span>
+                <span>Resolution: ${resolution}</span>
+                <span>Qualite source: ${qualityLabel}</span>
+                ${shouldWarn ? '<span class="warning-chip">Cette source est inferieure a 1080p, le plein ecran peut paraitre flou</span>' : ""}
+            `;
+        }
+
+        function assTimeToSeconds(value) {
+            const parts = value.trim().split(":");
+            if (parts.length !== 3) {
+                return NaN;
+            }
+
+            const hours = Number(parts[0]);
+            const minutes = Number(parts[1]);
+            const seconds = Number(parts[2].replace(",", "."));
+            return (hours * 3600) + (minutes * 60) + seconds;
+        }
+
+        function cleanAssText(value) {
+            return value
+                .replace(/\{[^}]*\}/g, "")
+                .replace(/\\N/gi, "\n")
+                .replace(/\\n/gi, "\n")
+                .replace(/\\h/gi, " ")
+                .trim();
+        }
+
+        function parseAss(content) {
+            const lines = content.split(/\r?\n/);
+            let inEvents = false;
+            let formatColumns = [];
+            const entries = [];
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) {
+                    continue;
+                }
+
+                if (line.startsWith("[Events]")) {
+                    inEvents = true;
+                    continue;
+                }
+
+                if (inEvents && line.startsWith("[")) {
+                    break;
+                }
+
+                if (!inEvents) {
+                    continue;
+                }
+
+                if (line.startsWith("Format:")) {
+                    formatColumns = line
+                        .slice("Format:".length)
+                        .split(",")
+                        .map(item => item.trim().toLowerCase());
+                    continue;
+                }
+
+                if (!line.startsWith("Dialogue:") || formatColumns.length === 0) {
+                    continue;
+                }
+
+                const payload = line.slice("Dialogue:".length).trim();
+                const values = [];
+                let current = "";
+
+                for (let i = 0; i < payload.length; i += 1) {
+                    const char = payload[i];
+                    if (char === "," && values.length < formatColumns.length - 1) {
+                        values.push(current);
+                        current = "";
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current);
+
+                const row = {};
+                formatColumns.forEach((column, index) => {
+                    row[column] = (values[index] || "").trim();
+                });
+
+                const start = assTimeToSeconds(row.start || "");
+                const end = assTimeToSeconds(row.end || "");
+                const text = cleanAssText(row.text || "");
+
+                if (Number.isFinite(start) && Number.isFinite(end) && text) {
+                    entries.push({ start, end, text });
+                }
+            }
+
+            return entries;
+        }
+
+        function srtTimeToSeconds(value) {
+            const normalized = value.trim().replace(",", ".");
+            const parts = normalized.split(":");
+            if (parts.length !== 3) {
+                return NaN;
+            }
+
+            const hours = Number(parts[0]);
+            const minutes = Number(parts[1]);
+            const seconds = Number(parts[2]);
+            return (hours * 3600) + (minutes * 60) + seconds;
+        }
+
+        function parseSrt(content) {
+            const blocks = content
+                .replace(/\r/g, "")
+                .split("\n\n")
+                .map(block => block.trim())
+                .filter(Boolean);
+
+            const entries = [];
+
+            for (const block of blocks) {
+                const lines = block.split("\n");
+                const timingLine = lines.find(line => line.includes("-->"));
+                if (!timingLine) {
+                    continue;
+                }
+
+                const [startRaw, endRaw] = timingLine.split("-->").map(value => value.trim());
+                const textLines = lines.slice(lines.indexOf(timingLine) + 1).filter(Boolean);
+                const text = textLines.join("\n").trim();
+                const start = srtTimeToSeconds(startRaw);
+                const end = srtTimeToSeconds(endRaw);
+
+                if (Number.isFinite(start) && Number.isFinite(end) && text) {
+                    entries.push({ start, end, text });
+                }
+            }
+
+            return entries;
+        }
+
+        async function loadSubtitleFile(file) {
+            if (!file) {
+                clearSubtitles();
+                return;
+            }
+
+            try {
+                const content = await file.text();
+                const lowerName = file.name.toLowerCase();
+                const entries = lowerName.endsWith(".srt") ? parseSrt(content) : parseAss(content);
+
+                if (!entries.length) {
+                    currentSubtitleEntries = [];
+                    subtitleText.textContent = "";
+                    subtitleText.classList.add("hidden");
+                    subtitleFileName.textContent = "Sous-titres charges, mais aucun texte detecte.";
+                    updateStatus("Fichier de sous-titres invalide ou vide.", "error");
+                    return;
+                }
+
+                currentSubtitleEntries = entries;
+                subtitleFileName.textContent = `Sous-titres: ${file.name}`;
+                updateSubtitleForCurrentTime();
+                updateStatus(`Sous-titres charges: ${file.name}`, "success");
+            } catch (error) {
+                clearSubtitles();
+                updateStatus("Impossible de lire le fichier de sous-titres.", "error");
+            }
+        }
+
+        function updateSubtitleForCurrentTime() {
+            if (!currentSubtitleEntries.length) {
+                subtitleText.textContent = "";
+                subtitleText.classList.add("hidden");
+                return;
+            }
+
+            const currentTime = videoPlayer.currentTime || 0;
+            const activeEntry = currentSubtitleEntries.find(
+                entry => currentTime >= entry.start && currentTime <= entry.end
+            );
+
+            if (!activeEntry) {
+                subtitleText.textContent = "";
+                subtitleText.classList.add("hidden");
+                return;
+            }
+
+            subtitleText.textContent = activeEntry.text;
+            subtitleText.classList.remove("hidden");
+        }
+
+        // Type selector
+        typeButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                typeButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentType = btn.dataset.type;
+
+                if (currentType === "video") {
+                    videoFormatSelector.classList.add("visible");
+                    audioFormatSelector.style.display = "none";
+                    audioFormatSelector.classList.remove("visible");
+                    qualitySelector.classList.add("visible");
+                } else {
+                    videoFormatSelector.classList.remove("visible");
+                    audioFormatSelector.style.display = "flex";
+                    audioFormatSelector.classList.add("visible");
+                    qualitySelector.classList.remove("visible");
+                }
+            });
+        });
+
+        // Video format selector
+        videoFormatSelect.addEventListener("change", () => {
+            currentVideoFormat = videoFormatSelect.value;
+        });
+
+        // Audio format selector
+        audioFormatSelect.addEventListener("change", () => {
+            currentAudioFormat = audioFormatSelect.value;
+        });
+
+        // Language selector
+        languageSelect.addEventListener("change", () => {
+            currentLanguage = languageSelect.value;
+        });
+
+        // Quality selector
+        qualityButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                qualityButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentQuality = btn.dataset.quality;
+            });
+        });
+
+        // Speed board
+        function buildSpeedBoard() {
+            speedBoard.innerHTML = "";
+            speedValues.forEach(speed => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.dataset.speed = speed;
+                btn.textContent = "x" + speed;
+                btn.addEventListener("click", () => setPlaybackRate(speed));
+                speedBoard.appendChild(btn);
+            });
+            updateSpeedButtons(1);
+        }
+
+        function updateSpeedButtons(activeSpeed) {
+            speedBoard.querySelectorAll("button").forEach(btn => {
+                btn.classList.toggle("active", Number(btn.dataset.speed) === activeSpeed);
+            });
+        }
+
+        function setPlaybackRate(rate) {
+            videoPlayer.playbackRate = rate;
+            updateSpeedButtons(rate);
+            resetSpeed.textContent = "x" + rate;
+        }
+
+        // Player controls
+        loopToggle.addEventListener("click", () => {
+            videoPlayer.loop = !videoPlayer.loop;
+            loopToggle.classList.toggle("active", videoPlayer.loop);
+            loopToggle.textContent = videoPlayer.loop ? "Loop on" : "Loop off";
+        });
+
+        playPauseToggle.addEventListener("click", async () => {
+            if (!videoPlayer.src) {
+                updateStatus("Telecharge d'abord une video.", "error");
+                return;
+            }
+            if (videoPlayer.paused) {
+                await videoPlayer.play();
+                playPauseToggle.textContent = "Pause";
+            } else {
+                videoPlayer.pause();
+                playPauseToggle.textContent = "Lire";
+            }
+        });
+
+        resetSpeed.addEventListener("click", () => setPlaybackRate(1));
+
+        videoPlayer.addEventListener("play", () => playPauseToggle.textContent = "Pause");
+        videoPlayer.addEventListener("pause", () => playPauseToggle.textContent = "Lire");
+        videoPlayer.addEventListener("timeupdate", updateSubtitleForCurrentTime);
+        videoPlayer.addEventListener("seeked", updateSubtitleForCurrentTime);
+        videoPlayer.addEventListener("ratechange", updateSubtitleForCurrentTime);
+        videoPlayer.addEventListener("error", () => {
+            updateStatus("Lecture impossible pour ce media ou format non supporte.", "error");
+        });
+        videoPlayer.addEventListener("ended", () => {
+            subtitleText.textContent = "";
+            subtitleText.classList.add("hidden");
+        });
+
+        videoPlayer.addEventListener("loadedmetadata", renderPlayerMeta);
+        document.addEventListener("fullscreenchange", renderPlayerMeta);
+        window.addEventListener("resize", renderPlayerMeta);
+
+        // Place player in stage
+        function placePlayerInStage() {
+            if (playerShell.parentElement !== mediaStage) {
+                mediaStage.appendChild(playerShell);
+            }
+            mediaStage.classList.remove("empty");
+            mediaStageNote.style.display = "none";
+            sourceCard.classList.add("visible");
+        }
+
+        // Load video
+        function loadVideo(url, filename, sourceType, sourceLabel) {
+            placePlayerInStage();
+            videoPlayer.pause();
+            const mediaUrl = url.startsWith("blob:") ? url : url + "?t=" + Date.now();
+            videoPlayer.muted = false;
+            videoPlayer.volume = 1;
+            videoPlayer.src = mediaUrl;
+            videoPlayer.load();
+            playerShell.classList.add("visible");
+            setPlaybackRate(1);
+            videoPlayer.loop = false;
+            loopToggle.classList.remove("active");
+            loopToggle.textContent = "Loop off";
+            updateSourceCard(sourceType, sourceLabel || filename);
+            updateStatus("Video prete: " + filename, "success");
+        }
+
+        function loadLocalFileDirectly() {
+            const file = localVideoFile.files[0];
+            if (!file) {
+                return null;
+            }
+
+            if (currentLocalObjectUrl) {
+                URL.revokeObjectURL(currentLocalObjectUrl);
+            }
+
+            currentLocalObjectUrl = URL.createObjectURL(file);
+            loadVideo(currentLocalObjectUrl, file.name, "LOCAL", file.name);
+            return {
+                success: true,
+                filename: file.name,
+                file_url: currentLocalObjectUrl,
+                source_type: "local",
+                source_label: file.name
+            };
+        }
+
+        pickLocalFile.addEventListener("click", () => localVideoFile.click());
+        pickSubtitleFile.addEventListener("click", () => subtitleFile.click());
+        openBatchBtn.addEventListener("click", () => setBatchModalVisible(true));
+        closeBatchBtn.addEventListener("click", () => setBatchModalVisible(false));
+        importBatchFileBtn.addEventListener("click", () => batchFileInput.click());
+        batchFileInput.addEventListener("change", async () => {
+            const file = batchFileInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            try {
+                batchUrls.value = await file.text();
+                batchResults.innerHTML = "";
+                batchResults.classList.remove("visible");
+                updateStatus(`Liste importee: ${file.name}`, "success");
+            } catch (error) {
+                updateStatus("Impossible de lire le fichier d'URLs.", "error");
+            } finally {
+                batchFileInput.value = "";
+            }
+        });
+        clearBatchBtn.addEventListener("click", () => {
+            batchUrls.value = "";
+            batchResults.innerHTML = "";
+            batchResults.classList.remove("visible");
+            currentUrlOptionsProfile = null;
+            urlOptionsLoadedFor = "";
+            urlOptionsGrid.innerHTML = "";
+            setUrlOptionsPanelVisible(false);
+        });
+
+        urlOptionsBtn.addEventListener("click", async () => {
+            if (urlOptionsPanel.classList.contains("visible")) {
+                setUrlOptionsPanelVisible(false);
+                return;
+            }
+            await loadUrlOptionsPanel(true);
+        });
+
+        applyUrlOptionsBtn.addEventListener("click", expandFirstUrl);
+        fetchEpisodesBtn.addEventListener("click", expandFirstUrl);
+        startBatchBtn.addEventListener("click", runBatchDownload);
+        batchUrls.addEventListener("input", () => {
+            const firstUrl = getFirstBatchUrl();
+            if (firstUrl !== urlOptionsLoadedFor) {
+                currentUrlOptionsProfile = null;
+                urlOptionsLoadedFor = "";
+            }
+        });
+        batchModal.addEventListener("click", (event) => {
+            if (event.target === batchModal) {
+                setBatchModalVisible(false);
+            }
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && batchModal.classList.contains("visible")) {
+                setBatchModalVisible(false);
+            }
+        });
+
+        localVideoFile.addEventListener("change", () => {
+            const file = localVideoFile.files[0];
+            if (file) {
+                const lowerName = file.name.toLowerCase();
+                if (lowerName.endsWith(".ass") || lowerName.endsWith(".srt")) {
+                    localVideoFile.value = "";
+                    localFileName.textContent = "Aucune video locale selectionnee.";
+                    subtitleFileName.textContent = `Sous-titres: ${file.name}`;
+                    loadSubtitleFile(file);
+                    updateSourceCard("SUBTITLE", file.name);
+                    return;
+                }
+
+                localFileName.textContent = "Fichier local: " + file.name;
+                updateSourceCard("LOCAL", file.name);
+                input.value = "";
+                loadLocalFileDirectly();
+                updateStatus("Video locale chargee directement.", "success");
+            } else {
+                localFileName.textContent = "Aucune video locale selectionnee.";
+            }
+        });
+
+        subtitleFile.addEventListener("change", async () => {
+            const file = subtitleFile.files[0];
+            if (!file) {
+                clearSubtitles();
+                return;
+            }
+            await loadSubtitleFile(file);
+        });
+
+        input.addEventListener("input", () => {
+            const value = input.value.trim();
+            if (value) {
+                if (currentLocalObjectUrl) {
+                    URL.revokeObjectURL(currentLocalObjectUrl);
+                    currentLocalObjectUrl = null;
+                }
+                localVideoFile.value = "";
+                localFileName.textContent = "Aucune video locale selectionnee.";
+                updateSourceCard("URL", value);
+            }
+        });
+
+        // Form submit - Download
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const url = input.value.trim();
+            const hasLocalFile = Boolean(localVideoFile.files[0]);
+            if (!url && !hasLocalFile) {
+                updateStatus("Entre une URL (YouTube, Twitch, Vimeo…) ou choisis un fichier local.", "error");
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            showProgress();
+            updateStatus("Telechargement en cours...", "loading");
+            statusMessage.classList.add("loading-pulse");
+
+            // Simulate progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                setProgress(progress);
+            }, 500);
+
+            try {
+                let data;
+
+                if (hasLocalFile) {
+                    data = loadLocalFileDirectly();
+                } else {
+                    const response = await fetch("/download", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            url: url,
+                            type: currentType,
+                            quality: currentQuality,
+                            video_format: currentVideoFormat,
+                            audio_format: currentAudioFormat,
+                            language: currentLanguage,
+                            write_subtitles: writeSubtitlesToggle.checked
+                        })
+                    });
+                    data = await response.json();
+                }
+
+                clearInterval(progressInterval);
+                setProgress(100);
+
+                if (data.success) {
+                    const successMessage = data.message || (hasLocalFile ? "Video locale prete: " + data.filename : "Telecharge: " + data.filename);
+                    updateStatus(successMessage, "success");
+
+                    if (!hasLocalFile && data.file_url && data.previewable !== false) {
+                        setTimeout(() => {
+                            loadVideo(
+                                data.file_url,
+                                data.filename,
+                                data.source_type === "local" ? "LOCAL" : "URL",
+                                data.source_label
+                            );
+                        }, 120);
+                    } else if (!hasLocalFile && data.previewable === false) {
+                        resetPlayerDisplay();
+                    }
+                } else {
+                    resetPlayerDisplay();
+                    updateStatus("Erreur: " + data.error, "error");
+                }
+            } catch (error) {
+                clearInterval(progressInterval);
+                resetPlayerDisplay();
+                updateStatus("Erreur: " + error.message, "error");
+            }
+
+            resetProgressUI();
+        });
+
+        // Init
+        buildSpeedBoard();
+        checkFFmpeg();
+        setInterval(checkFFmpeg, 60000);
+    </script>
+</body>
+</html>

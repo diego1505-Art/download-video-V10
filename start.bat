@@ -1,0 +1,47 @@
+@echo off
+title DowFlow
+cd /d "%~dp0"
+
+REM ── Venv ────────────────────────────────────────────────────────────────
+if exist ".venv\Scripts\activate.bat" (
+    call .venv\Scripts\activate.bat
+) else (
+    echo Creation du venv...
+    python -m venv .venv
+    call .venv\Scripts\activate.bat
+    pip install -r requirements.txt
+)
+
+REM ── Playwright / Chromium : verifier a chaque lancement ──────────────────
+python -c "from playwright.sync_api import sync_playwright as s; p=s().start(); b=p.chromium.launch(headless=True); b.close(); p.stop()" 1>nul 2>nul
+if errorlevel 1 (
+    echo [INFO] Playwright Chromium manquant ou corrompu.
+    echo [INFO] Tentative d'installation rapide...
+    echo [INFO] Si cela prend trop de temps, vous pouvez fermer cette fenêtre.
+    python -m playwright install chromium
+    if errorlevel 1 (
+        echo [ATTENTION] L'installation de Playwright a echoue. 
+        echo [ATTENTION] Les telechargements Franime pourraient ne pas fonctionner.
+    )
+)
+
+REM ── aria2c : verifier a chaque lancement, pas seulement a la creation ──
+aria2c --version >nul 2>&1
+if errorlevel 1 (
+    echo Installation de aria2c...
+    winget install aria2.aria2 --silent --accept-package-agreements --accept-source-agreements
+    REM Ajouter le chemin winget au PATH pour cette session
+    for /d %%D in ("%LOCALAPPDATA%\Microsoft\WinGet\Packages\aria2.aria2*") do (
+        for /d %%S in ("%%D\aria2*") do set "PATH=%%S;%PATH%"
+    )
+) else (
+    echo aria2c OK
+)
+
+REM ── FFmpeg ───────────────────────────────────────────────────────────────
+set "FFMPEG_BIN=%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin"
+if exist "%FFMPEG_BIN%\ffmpeg.exe" set "PATH=%FFMPEG_BIN%;%PATH%"
+
+start http://127.0.0.1:5001
+python app.py
+pause
